@@ -1,0 +1,333 @@
+---
+title: "QMM_Assignment_5"
+author: "SAKSHI"
+date: "2023-10-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA)
+library(kableExtra)
+library(stringr)
+```
+
+## DEA
+
+## Question
+
+### Directions
+
+**Hope Valley Health Care Association**
+
+**The Hope Valley Health Care Association owns and operates six nursing homes in adjoining states. An evaluation of their efficiency has been undertaken using two inputs and two outputs.The inputs are staffing labor (measured in average hours per day) and the cost of supplies (in thousands of dollars per day). The outputs are the number of patient-days reimbursed by third-party sources and the number of patient-days reimbursed privately. A summary of performance data is shown in the table below:**
+
+```{r}
+# making table for question 
+library(knitr)
+hope_valley <- data.frame(
+  DMU = c("Facility 1","Facility 2","Facility 3","Facility 4","Facility 5","Facility 6"),
+  Staff_hours_per_day = c(100,300,320,500,350,340),
+  Supplies_per_day = c(0.3,0.6,1.2,2,1.4,0.7),
+  Reimbursed_patient_days = c(15000,15000,40000,28000,20000,14000),
+  Privately_paid_patient_days = c(3500,20000,11000,42000,25000,15000))
+
+hope_valley %>% 
+  kable(caption = "Hope Valley Health Care Association") %>% 
+  kable_classic() %>% 
+  column_spec(3,border_right = TRUE) %>% 
+  column_spec(2,border_right = TRUE,extra_css = "border-right:dashed") %>% 
+  column_spec(4,border_right = TRUE,extra_css="border-right:dashed") %>% 
+  add_header_above(header = c(" "=1,"Inputs"=2,"Outputs"=2))
+
+```
+
+**1. Formulate and perform DEA analysis under all DEA assumptions of FDH, CRS, VRS,IRS, DRS, and FRH.**
+
+**2. Determine the Peers and Lambdas under each of the above assumptions**
+
+**3. Summarize your results in a tabular format**
+
+**4. Compare and contrast the above results**
+
+***
+
+## Answer
+
+This line loads the Benchmarking package, which contains functions for performing DEA analysis
+
+```{r}
+library(Benchmarking)
+```
+
+Input Data Preparation-
+
++ x and y matrices are created to represent the inputs and outputs, respectively.
+
++ x contains two input attributes, “staffing labor” and "cost of supplies". They have six rows representing six DMUs.
+
++ y contains two output attributes, “patient-days reimbursed by third-
+party sources" and "patient-days reimbursed privately", and have five rows representing the same six DMUs. colnames are set to provide column names for the x and y matrices.
+
+Input format
+```{r}
+# now making matrices for the input provided above
+x <- matrix(c(100,300,320,500,350,340,0.3,0.6,1.2,2.0,1.4,0.7),ncol = 2, dimnames=list(LETTERS[1:6],c("X1","X2")))
+y <- matrix(c(15000,15000,40000,28000,20000,14000,3500,20000,11000,42000,25000,15000),ncol = 2,dimnames=list(LETTERS[1:6],c("Y1","Y2")))
+```
+
+**1.Formulate and perform DEA analysis under all DEA assumptions of FDH, CRS, VRS,IRS, DRS, and FRH.**
+
+1a. **dea(x, y, RTS = “crs”):** This line performs DEA analysis using the dea function. It takes x (input matrix), y (output matrix), and an additional parameter RTS set to “crs,” which specifies the Constant Returns to Scale (CRS) assumption. CRS assumes that a proportional increase in inputs results in a proportional increase in outputs. The function returns efficiency scores for each DMU based on the CRS assumption.
+**When we use dea(x, y, RTS=“crs”), the CRS assumption is applied, it means that the scale of production does not affect the efficiency. Each DMU is operating at an optimal scale.**
+
+```{r}
+CRS <- dea(x,y,RTS="crs")
+CRS
+dea.plot(x,y,RTS="crs",txt = rownames(x))
+```
+
+1b. **dea(x, y, RTS = “irs”):** This line performs DEA analysis using the dea function. It takes x (input matrix), y (output matrix), and an additional parameter IRS set to “irs,” which specifies the Increasing Returns to Scale (IRS) assumption. IRS assumes that a proportional increase in inputs results in a greater increase in outputs. The function returns efficiency scores for each DMU based on the IRS assumption.
+**When we use dea(x, y, RTS=“irs”), the IRS assumption is applied, it means increase in scale of production affects efficiency as it becomes more efficient and experiences economies of scale.**
+
+```{r}
+IRS <- dea(x,y,RTS="irs")
+IRS
+dea.plot(x,y,RTS="irs",txt = rownames(x))
+```
+
+1c.**dea(x, y, RTS = “drs”):** This line performs DEA analysis using the dea function. It takes x (input matrix), y (output matrix), and an additional parameter DRS set to “drs,” which specifies the Decreasing Returns to Scale (DRS) assumption. DRS assumes that a proportional increase in inputs results in a lesser increase in outputs. The function returns efficiency scores for each DMU based on the DRS assumption.
+**When we use dea(x, y, RTS=“drs”), the DRS assumption is applied, it means decrease in scale of production affects efficiency as it becomes less efficient and experiences diminishing returns of scale.**
+
+```{r}
+DRS <- dea(x,y,RTS="drs")
+DRS
+dea.plot(x,y,RTS="drs",txt = rownames(x))
+```
+
+1d.**dea(x, y, RTS = “vrs”):** This line performs DEA analysis using the dea function. It takes x (input matrix), y (output matrix), and an additional parameter VRS set to “vrs,” which specifies the Variable Returns to Scale (VRS) assumption. VRS assumes that we may experience increasing returns to scale (IRS), while others may experience decreasing returns to scale (DRS), or they might operate at constant returns to scale (CRS).
+**When we use dea(x, y, RTS=“vrs”), the VRS assumption is applied, it means scale of production can vary and so does the efficiency**
+
+```{r}
+VRS <- dea(x,y,RTS="vrs")
+VRS
+dea.plot(x,y,RTS="vrs",txt = rownames(x))
+```
+
+1e. **dea(x, y, RTS = “fdh”):** This line performs DEA analysis using the dea function. It takes x (input matrix), y (output matrix), and an additional parameter FDH set to “fdh,” which specifies the Free Disposable Hull (FDH) assumption. FDH assumes that we may experience constant returns to scale (CRS) or variable returns to scale (VRS).
+**When we use dea(x, y, RTS=“fdh”), the FDH assumption is applied, it is assume while taking into account that we can freely dispose of unused inputs or produce more output without incurring extra costs**
+
+```{r}
+FDH <- dea(x,y,RTS="fdh")
+FDH
+dea.plot(x,y,RTS="fdh",txt = rownames(x))
+```
+
+1.f **dea(x, y, RTS = “frh”):** This line performs DEA analysis using the dea function. It takes x (input matrix), y (output matrix), and an additional parameter FRH set to “frh,” which specifies the Free Redistribution of non-discretionary Inputs and Outputs (FRH) assumption.
+**When we use dea(x, y, RTS=“frh”), the FDH assumption is applied, it assumes that non-discretionary inputs and outputs can be fully redistributed among DMUs without cost. This means that if a DMU is inefficient in its utilization of non-discretionary inputs or generation of non-discretionary outputs, these resources or outputs can be fully redistributed to other DMUs without incurring any additional cost.**
+
+```{r}
+FRH <- dea(x,y,RTS="add")
+FRH
+dea.plot(x,y,RTS="add",txt = rownames(x))
+```
+
+***
+
+**2.Determine the Peers and Lambdas under each of the above assumptions.**
+
+**Peer groups are sets of other DMUs that are considered efficient when evaluating a specific DMU. In other words, it shows which DMUs are considered benchmarks for each DMU.**
+
+```{r}
+# This line calculates and displays the peer groups and lambda for each CRS DMU.
+peers(CRS)
+round(lambda(CRS),2)
+```
+
+```{r}
+# This line calculates and displays the peer groups and lambda for each IRS DMU.
+peers(IRS)
+round(lambda(IRS),2)
+```
+
+```{r}
+# This line calculates and displays the peer groups and lambda for each DRS DMU.
+peers(DRS)
+round(lambda(DRS),2)
+```
+
+```{r}
+# This line calculates and displays the peer groups and lambda for each VRS DMU.
+peers(VRS)
+round(lambda(VRS),2)
+```
+
+```{r}
+# This line calculates and displays the peer groups and lambda for each FRH DMU.
+peers(FRH)
+round(lambda(FRH),2)
+```
+
+```{r}
+# This line calculates and displays the peer groups and lambda for each FDH DMU.
+peers(FDH)
+round(lambda(FDH),2)
+```
+
+***
+
+**3.Summarize your results in a tabular format.**
+
++ Results for CRS: 
+```{r}
+crs.df=cbind(peers(CRS),round(lambda(CRS),2))
+crs.df=data.frame(crs.df)
+crs.df %>% 
+  kable(align = "c") %>% 
+  kable_classic() %>% 
+  add_header_above(c("Facility"=1,"Peers"=2,"Lambda Values"=3))
+```
+
+
++ Results for IRS: 
+```{r}
+irs.df=cbind(peers(IRS),round(lambda(IRS),2))
+irs.df=data.frame(irs.df)
+irs.df %>% 
+  kable(align = "c") %>% 
+  kable_classic() %>% 
+  add_header_above(c("Facility"=1,"Peers"=2,"Lambda Values"=3))
+```
+
++ Results for DRS: 
+```{r}
+drs.df=cbind(peers(DRS),round(lambda(DRS),2))
+drs.df=data.frame(drs.df)
+drs.df %>% 
+  kable(align = "c") %>% 
+  kable_classic() %>% 
+  add_header_above(c("Facility"=1,"Peers"=2,"Lambda Values"=4))
+```
+
++ Results for VRS: 
+```{r}
+vrs.df=cbind(peers(VRS),round(lambda(VRS),2))
+vrs.df=data.frame(vrs.df)
+vrs.df %>% 
+  kable(align = "c") %>% 
+  kable_classic() %>% 
+  add_header_above(c("Facility"=1,"Peers"=2,"Lambda Values"=4))
+```
+
++ Results for FDH: 
+```{r}
+fdh.df=cbind(peers(FDH),round(lambda(FDH),2))
+fdh.df=data.frame(fdh.df)
+fdh.df %>% 
+  kable(align = "c") %>% 
+  kable_classic() %>% 
+  add_header_above(c("Facility"=1,"Peers"=1,"Lambda Values"=5))
+```
+
++ Results for FRH: 
+```{r}
+frh.df=cbind(peers(FRH),round(lambda(FRH),2))
+frh.df=data.frame(frh.df)
+frh.df %>% 
+  kable(align = "c") %>% 
+  kable_classic() %>% 
+  add_header_above(c("Facility"=1,"Peers"=1,"Lambda Values"=5))
+
+```
+***
+
+**4.Compare and contrast the above results.**
+
+**4.a Interpretation for CRS:** 
+
+```{r}
+CRS
+```
+
+- From the 1 part of the question, we can say that DMU1,DMU2,DMU4 are the most efficient models since they an efficiency of 1 (maximum efficiency a model can reach). However, DMU3, DMU5 and DMU6 are inefficient in nature since the efficiency they have obtained in less than 1.
+
+- Secondly, from the 2 part of the question, we can say that Peers of inefficient model- DMU3,DMU5 and DMU6  are (1,4) , (1,4) and (1,2) respectively which means that both DMU3 and DMU5 can learn from their peer DMU1 and DMU4 to become more efficient. Similarly DMU6 can learn from their peer DMU1 and DMU2 to become more efficient.
+
+- Lastly, from the 3 part of the question, we can say Lambda values of DMU3, DMU5 and DMU6 are (2.58,0.05) , (0.26,0.57) and (0.22,0.71) respectively. The lambda values represent the degree to which a particular DMU learns from its peers. 
+
+- Inefficiency of DMU3 is 1-0.8793 = 0.1207 i.e 12%. It means that DMU3 can reduce it's inefficiency of 12% by learning from DMU1 and DMU4 respectively. DMU3 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 51:1. Since DMU1 ratio is bigger, we can say that it will learn from from it.
+
+
+- Inefficiency of DMU5 is 1-0.8942 = 0.1058 i.e 11%. It means that DMU5 can reduce it's inefficiency of 11% by learning from DMU1 and DMU4 respectively. DMU5 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 1:2. Since DMU4 lies closer to DMU5, we can say that it will learn from from it than DMU1 which lies farther away.
+
+- Inefficiency of DMU6 is 1-0.7048 = 0.2952 i.e 30%. It means that DMU6 can reduce it's inefficiency of 30% by learning from DMU1 and DMU2 respectively. DMU6 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 2:7. Since DMU2 ratio is bigger, we can say that it will learn from from it.
+
+**4.b Interpretation for IRS:**
+
+```{r}
+IRS
+```
+
+- From the 1 part of the question, we can say that DMU1,DMU2,DMU4 are the most efficient models since they an efficiency of 1 (maximum efficiency a model can reach). However, DMU3, DMU5 and DMU6 are inefficient in nature since the efficiency they have obtained in less than 1.
+
+- Secondly, from the 2 part of the question, we can say that Peers of inefficient model- DMU3,DMU5 and DMU6  are (1,4) , (1,4) and (1,2) respectively which means that both DMU3 and DMU5 can learn from their peer DMU1 and DMU4 to become more efficient. Similarly DMU6 can learn from their peer DMU1 and DMU2 to become more efficient.
+
+- Inefficiency of DMU3 is 1-0.8793 = 0.1207 i.e 12%. It means that DMU3 can reduce it's inefficiency of 12% by learning from DMU1 and DMU4 respectively. DMU3 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 51:1. Since DMU1 ratio is bigger, we can say that it will learn from from it.
+
+
+- Inefficiency of DMU5 is 1-0.9239 = 0.0761 i.e 8%. It means that DMU5 can reduce it's inefficiency of 8% by learning from DMU1 and DMU4 respectively. DMU5 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 11:14. Since DMU4 lies closer to DMU5, we can say that it will learn from from it than DMU1 which lies farther away.
+
+- Inefficiency of DMU6 is 1-0.7273 = 0.2727 i.e 27%. It means that DMU6 can reduce it's inefficiency of 27% by learning from DMU1 and DMU2 respectively. DMU6 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 3:7. Since DMU2 ratio is bigger, we can say that it will learn from from it.
+
+**4.c Interpretation for DRS:**
+
+```{r}
+DRS
+```
+
+- From the 1 part of the question, we can say that DMU1,DMU2,DMU3,DMU4 are the most efficient models since they an efficiency of 1 (maximum efficiency a model can reach). However, DMU5 and DMU6 are inefficient in nature since the efficiency they have obtained in less than 1.
+
+- Secondly, from the 2 part of the question, we can say that Peers of inefficient model- DMU5 and DMU6  are (1,4) and (1,2) respectively which means that DMU5 can learn from their peer DMU1 and DMU4 to become more efficient. Similarly DMU6 can learn from their peer DMU1 and DMU2 to become more efficient
+
+- Inefficiency of DMU5 is 1-0.8942 = 0.1058 i.e 11%. It means that DMU5 can reduce it's inefficiency of 11% by learning from DMU1 and DMU4 respectively. DMU5 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 1:2. Since DMU4 lies closer to DMU5, we can say that it will learn from from it than DMU1 which lies farther away.
+
+- Inefficiency of DMU6 is 1-0.7048 = 0.2952 i.e 30%. It means that DMU6 can reduce it's inefficiency of 30% by learning from DMU1 and DMU2 respectively. DMU6 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 2:7. Since DMU2 ratio is bigger, we can say that it will learn from from it.
+
+**4.d Interpretation for VRS:**
+
+```{r}
+VRS
+```
+
+- From the 1 part of the question, we can say that DMU1,DMU2,DMU3,DMU4,DMU5 are the most efficient models since they an efficiency of 1 (maximum efficiency a model can reach). However, DMU5 and DMU6 are inefficient in nature since the efficiency they have obtained in less than 1.
+
+- Secondly, from the 2 part of the question, we can say that Peers of inefficient model- DMU5 and DMU6  are (1,4) and (1,2) respectively which means that DMU5 can learn from their peer DMU1 and DMU4 to become more efficient. Similarly DMU6 can learn from their peer DMU1 and DMU2 to become more efficient.
+
+- Inefficiency of DMU5 is 1-0.9239 = 0.0761 i.e 8%. It means that DMU5 can reduce it's inefficiency of 8% by learning from DMU1 and DMU4 respectively. DMU5 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 11:14. Since DMU4 lies closer to DMU5, we can say that it will learn from from it than DMU1 which lies farther away.
+
+- Inefficiency of DMU6 is 1-0.7273 = 0.2727 i.e 27%. It means that DMU6 can reduce it's inefficiency of 27% by learning from DMU1 and DMU2 respectively. DMU6 does not lie in the middle of DMU1 and DMU4 so we will find the ratio of line joining the same which is 3:7. Since DMU2 ratio is bigger, we can say that it will learn from from it.
+
+**4.e Interpretation for FRH:**
+
+```{r}
+FRH
+```
+
+- From the 1 part of the question, we can say that DMU1,DMU2,DMU3,DMU4,DMU5 are the most efficient models since they an efficiency of 1 (maximum efficiency a model can reach). However, DMU6 is inefficient in nature since the efficiency obtained in less than 1.
+
+- Secondly, from the 2 part of the question, we can say that Peer of inefficient model- DMU6 is 2 which means that DMU6 can learn from their peer DMU2 to become more efficient.
+
+- Lastly, from the 3 part of the question, we can say Lambda values of DMU6 is 1. The lambda values represent the degree to which a particular DMU learns from its peers. 
+Inefficiency of DMU6 is 1-0.8824 = 0.1176 i.e 12%. It means that DMU6 can reduce it's inefficiency of 12% by learning from DMU2.
+
+**4.f Interpretation for FDH:**
+
+```{r}
+FDH
+```
+
+- From the 1 part of the question, we can say that DMU1,DMU2,DMU3,DMU4,DMU5 are the most efficient models since they an efficiency of 1 (maximum efficiency a model can reach). However, DMU6 is inefficient in nature since the efficiency obtained in less than 1.
+
+- Secondly, from the 2 part of the question, we can say that Peer of inefficient model- DMU6 is 2 which means that DMU6 can learn from their peer DMU2 to become more efficient.
+
+- Lastly, from the 3 part of the question, we can say Lambda values of DMU6 is 1. The lambda values represent the degree to which a particular DMU learns from its peers. 
+Inefficiency of DMU6 is 1-0.8824 = 0.1176 i.e 12%. It means that DMU6 can reduce it's inefficiency of 12% by learning from DMU2.
