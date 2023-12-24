@@ -1,0 +1,239 @@
+---
+title: "BA_Assignment3_811289717"
+author: "SAKSHI"
+date: "2023-10-12"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,comment = NA)
+```
+
+## Using the read command to load the file into R dataframe
+```{r}
+retail.df <- read.csv("/Users/sakshibansal/Desktop/Rhistory/Online_Retail.csv")
+```
+
+1.Show the breakdown of the number of transactions by countries i.e., how many transactions are
+in the dataset for each country (consider all records including cancelled transactions). Show this
+in total number and also in percentage. Show only countries accounting for more than 1% of the
+total transactions.
+
+```{r}
+library(tidyverse)
+# Using table command to filer country from dataset
+Country.Number <- table(retail.df$Country)
+
+#Using prop table command and multiplying by 100
+retail.df2 <- prop.table(Country.Number)
+Country.Percentage <- round(100*retail.df2, digits = 2)
+Country.Solution <- as.data.frame(cbind(Country.Number,Country.Percentage))
+Country.ANS <- Country.Solution %>% 
+  filter(Country.Percentage>1)
+Country.ANS
+```
+***
+
+2.Create a new variable ‘TransactionValue’ that is the product of the exising ‘Quantity’ and
+‘UnitPrice’ variables. Add this variable to the dataframe.
+
+```{r}
+# Using mutate command to create a new variable "transaction value".
+retail.df=retail.df %>% 
+  mutate(transaction.value = Quantity*UnitPrice)
+head(retail.df$transaction.value)
+```
+***
+
+3.Using the newly created variable, TransactionValue, show the breakdown of transaction values
+by countries i.e. how much money in total has been spent by each country. Show this in total sum of transaction values. Show only countries with total transaction exceeding 130,000 British Pound.
+
+```{r}
+# Using group by function along with summarise to find the answer.
+retail.df %>% 
+  group_by(Country) %>% 
+  summarise(total.money.spent = sum(transaction.value)) %>% 
+  filter(total.money.spent>130000)
+```
+***
+
+4.This is an optional question which carries additional marks (golden question).
+
+```{r}
+Temp = strptime(retail.df$InvoiceDate,format='%m/%d/%Y %H:%M',tz='GMT')
+head(Temp)
+
+# New Invoice Date
+retail.df$invoice.by.date = as.Date(Temp)
+
+# New Invoice Date by week
+retail.df$invoice.by.week = weekdays(retail.df$invoice.by.date)
+
+# New Invoice Date by month
+retail.df$invoice.by.month = as.numeric(format(Temp, "%m"))
+
+# New Invoice Date by hour
+retail.df$invoice.by.hour = as.numeric(format(Temp, "%H"))
+```
+
+a) Show the percentage of transactions (by numbers) by days of the week.
+
+```{r}
+weekday.numbers = round(100*prop.table(table(retail.df$invoice.by.week)))
+weekday.numbers
+```
+
+b)Show the percentage of transactions (by transaction volume) by days of the week
+
+```{r}
+volume = retail.df %>% 
+  group_by(invoice.by.week) %>% 
+  summarise(weekday.volume.= 100*(sum(transaction.value)/sum(retail.df$transaction.value)))
+volume
+```
+
+c)Show the percentage of transactions (by transaction volume) by month of the year.
+
+```{r}
+weekday.percentage.month = round(100*prop.table(table(retail.df$invoice.by.month)))
+weekday.percentage.month
+```
+
+d)What was the date with the highest number of transactions from Australia?
+
+```{r}
+retail.australia = cbind(retail.df,retail.df$invoice.by.date)
+
+retail.australia = retail.australia %>% 
+  filter(Country == "Australia")
+
+retail.date.australia = table(retail.australia$invoice.by.date)
+
+solution.australia = which(retail.date.australia == max(retail.date.australia))
+retail.date.australia
+# Australia did maximum transactions on 2011-06-15
+```
+
+e) The company needs to shut down the website for two consecutive hours for maintenance. What would be the hour of the day to start this so that the distribution is at minimum for the customers?
+
+```{r}
+retail.m=table(retail.df$invoice.by.hour)
+retail.m
+# 6th and 7th hour will be the perfect time for company to shut down the website for maintenance.
+```
+
+***
+
+5.Plot the histogram of transaction values from Germany. Use the hist() function to plot.
+
+```{r}
+library(dplyr)
+# Using hist function to plot transaction values from Germany.
+retail.df3 = filter(retail.df,Country=="Germany")
+hist(retail.df3$transaction.value,xlab = "Transaction Value",ylab = "Frequency",main = "Transaction vales from Germany",col = "green")
+```
+***
+
+6.Which customer had the highest number of transactions? Which customer is most valuable (i.e.
+highest total sum of transactions)?
+
+```{r}
+customer.number <- table(retail.df$CustomerID)
+which.max(customer.number)
+# Customer ID 17841 had the highest number of transactions.
+```
+
+```{r}
+retail.df5=na.omit(retail.df)
+customer.valuable = retail.df5 %>% 
+  group_by(CustomerID) %>% 
+  summarise(money = sum(transaction.value)) %>% 
+  filter(money == max(money)) 
+customer.valuable
+# Customer ID 14646 is the most valuable customer.
+```
+
+***
+
+7.Calculate the percentage of missing values for each variable in the dataset.
+
+```{r}
+colMeans(is.na(retail.df)*100)
+# Customer ID is the only variable with missing values of percentage "24.92"
+```
+
+***
+
+8.What are the number of transactions with missing CustomerID records by countries?
+
+```{r}
+Customer.na = retail.df %>% 
+  filter(is.na(CustomerID))
+
+Customer.na = Customer.na %>% 
+  group_by(Country) %>% 
+  summarise(Missing.ID = length(CustomerID))
+Customer.na
+#United Kingdom has the highest number of transactions with Customer ID i.e 133600.
+```
+***
+
+9.On average, how often the costumers comeback to the website for their next shopping? (i.e. what
+is the average number of days between consecutive shopping?
+
+```{r}
+Retail.Diff.Days <- retail.df %>% 
+  select(CustomerID, invoice.by.date) %>%
+  group_by(CustomerID) %>% 
+  distinct(invoice.by.date) %>% 
+  arrange(CustomerID) %>%  
+  mutate(Days.in.Between = abs(invoice.by.date-lag(invoice.by.date))) %>%
+  filter(!is.na(Days.in.Between)) 
+
+Retail.Diff.Days
+
+mean(Retail.Diff.Days$Days.in.Between)
+# The average number of days between shopping is 38 days.
+```
+
+***
+
+10.What is the return rate for the French customers?
+
+```{r}
+retail.france = retail.df %>% 
+  filter(Country == "France", Quantity < 0)
+
+retail.france2 = retail.df %>% 
+  filter(Country == "France")
+
+france.return = length(retail.france$Quantity)/length(retail.france2$Quantity)*100
+france.return
+# The return ratw for french customers is 1.74% .
+```
+
+***
+
+11.What is the product that has generated the highest revenue for the retailer? (i.e. item with the highest total sum of ‘TransactionValue’.
+
+```{r}
+product.revenue= retail.df %>% 
+  group_by(Description) %>% 
+  summarise(revenue = sum(transaction.value)) %>% 
+  filter(revenue == max(revenue))
+product.revenue
+# DOTCOM POSTAGE is the only product which generates highest revenue for retailer.
+```
+
+***
+
+12. How many unique customers are represented in the dataset?
+
+```{r}
+length(unique(retail.df$CustomerID))
+# There are total 4373 unique Customer IDs.
+```
+
+***
